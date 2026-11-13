@@ -107,6 +107,10 @@ radial-gradient(circle at 8% 20%,#e8b84a 0 3px,transparent 4px),radial-gradient(
 @keyframes tw{from{opacity:.35;transform:translateY(0)}to{opacity:1;transform:translateY(3px)}}
 .bctl{position:absolute;top:calc(8px + env(safe-area-inset-top));right:10px;display:flex;align-items:center;gap:6px}
 .bday.sm{padding:10px 14px;gap:10px}.bday.sm .b60{font-size:40px;letter-spacing:-2px}.bday.sm .bt b{font-size:20px}.bday.sm .bt small{font-size:10px}.bday.sm .bt span,.bday.sm .flag{display:none}
+.bimg{position:relative;padding:calc(8px + env(safe-area-inset-top)) 8px 0;background:var(--bg)}
+.bimg img{display:block;width:100%;height:auto;border-radius:16px}
+.bimg .bctl{top:calc(18px + env(safe-area-inset-top));right:18px;background:rgba(5,12,31,.78);border-radius:99px;padding:3px 8px}
+.bimg .gear{color:#fff;padding:2px 4px;font-size:20px}
 </style>
 </head>
 <body>
@@ -252,8 +256,7 @@ function summaryCard(){
   return`<div class="card"><div class="vs">${col(0)}<div class="mid">VS</div>${col(1)}</div><div class="status">${st}</div></div>`;
 }
 function banner(){
-  const name=C.honoree?`<small>HAPPY BIRTHDAY</small><b>${esc(C.honoree)}</b>`:`<small>${esc(C.title)}</small>`;
-  return`<div class="bday"><i class="cf"></i><div class="b60">60</div><div class="bt">${name}<span>${esc(C.course||'')}</span></div><svg class="flag" viewBox="0 0 40 56" aria-hidden="true"><path d="M10 4v48" stroke="#e8b84a" stroke-width="3" stroke-linecap="round"/><path d="M10 6l22 8-22 8z" fill="#e8b84a"/><ellipse cx="10" cy="52" rx="9" ry="3" fill="#e8b84a" opacity=".35"/></svg><div class="bctl"><span class="dot ${SYNC?'':'off'}" id="dot" title="sync"></span><button class="gear" data-act="setup" aria-label="Setup">&#9881;</button></div></div>`;
+  return`<div class="bimg"><img src="banner.jpg" alt="${esc((C.honoree||'')+"'s Birthday Round")}"><div class="bctl"><span class="dot ${SYNC?'':'off'}" id="dot" title="sync"></span><button class="gear" data-act="setup" aria-label="Setup">&#9881;</button></div></div>`;
 }
 function matchView(){
   const h=hole,par=C.par[h],si=C.si[h],all=h===8||h===17;
