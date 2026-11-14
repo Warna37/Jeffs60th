@@ -111,6 +111,8 @@ radial-gradient(circle at 8% 20%,#e8b84a 0 3px,transparent 4px),radial-gradient(
 .bimg img{display:block;width:100%;height:auto;border-radius:16px}
 .bimg .bctl{top:calc(18px + env(safe-area-inset-top));right:18px;background:rgba(5,12,31,.78);border-radius:99px;padding:3px 8px}
 .bimg .gear{color:#fff;padding:2px 4px;font-size:20px}
+.clg{display:grid;grid-template-columns:repeat(6,1fr);gap:4px 6px}.clg label{display:flex;align-items:center;gap:6px;margin:0;color:var(--tx);font-size:15px}.clg input{width:20px;height:20px;padding:0}
+.strip button.closed{opacity:.25;text-decoration:line-through}
 </style>
 </head>
 <body>
@@ -126,7 +128,7 @@ radial-gradient(circle at 8% 20%,#e8b84a 0 3px,transparent 4px),radial-gradient(
 'use strict';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const DEF=()=>({title:"Ponz's 60th Round",honoree:'Ponz',cap:true,sub:'',course:'Turtle Creek Club (Blue)',teams:[{id:'A',name:'Team A'},{id:'B',name:'Team B'}],
+const DEF=()=>({title:"Ponz's 60th Round",honoree:'Ponz',cap:true,closed:[],sub:'',course:'Turtle Creek Club (Blue)',teams:[{id:'A',name:'Team A'},{id:'B',name:'Team B'}],
   pct:100,players:[['Luke','A',8],['Will','A',14],['Chris','A',14],['Mac','A',4],['Kyle','B',0],['Jeff','B',10],['Dickie','B',27],['Chris Vincze','B',14]].map((x,i)=>({id:'p'+(i+1),name:x[0],team:x[1],hcp:x[2]})),
   par:[5, 4, 3, 4, 4, 4, 5, 3, 4, 4, 4, 4, 5, 3, 4, 5, 3, 4],si:[11, 1, 17, 13, 5, 3, 9, 15, 7, 2, 12, 4, 6, 18, 14, 10, 16, 8],yds:[533, 399, 142, 355, 372, 385, 542, 178, 394, 421, 384, 416, 506, 147, 344, 493, 181, 391],pairs:null});
 
@@ -140,7 +142,11 @@ function toast(m){const e=document.createElement('div');e.className='toast';e.te
 
 /* ---------- scoring math ---------- */
 function shots(p){return Math.max(0,Math.round((+p.hcp||0)*(C.pct==null?100:C.pct)/100))}
-function strokes(p,h){const x=shots(p);return Math.floor(x/18)+((C.si[h]||h+1)<=x%18?1:0)}
+const isOpen=h=>!(C.closed||[]).includes(h);
+const OPEN=()=>Array.from({length:18},(_,i)=>i).filter(isOpen);
+function eSI(h){return OPEN().sort((a,b)=>C.si[a]-C.si[b]).indexOf(h)+1}
+function nextOpen(h,d){for(let i=h+d;i>=0&&i<18;i+=d)if(isOpen(i))return i;return null}
+function strokes(p,h){if(!isOpen(h))return 0;const x=shots(p),N=OPEN().length||18;return Math.floor(x/N)+(eSI(h)<=x%N?1:0)}
 function cap(p,h){return C.cap===false?99:C.par[h]+2+strokes(p,h)}
 function gr(p,h){const g=sc(p.id)[h];return g==null?null:Math.min(g,cap(p,h))}
 function net(p,h){const g=gr(p,h);return g==null?null:g-strokes(p,h)}
@@ -148,6 +154,7 @@ function net(p,h){const g=gr(p,h);return g==null?null:g-strokes(p,h)}
 function teamCalc(tid){
   const ps=C.players.filter(p=>p.team===tid);let total=0,par=0,n=0,b9=0,h18=0;const holes=[];
   for(let h=0;h<18;h++){
+    if(!isOpen(h)){holes.push(null);continue}
     const ns=ps.map(p=>net(p,h));
     if(!ps.length||ns.some(x=>x==null)){holes.push(null);continue}
     const all=h===8||h===17,s=[...ns].sort((a,b)=>a-b),k=all?s.length:Math.min(2,s.length);
@@ -158,10 +165,10 @@ function teamCalc(tid){
 }
 // Blind-draw pair: combined net strokes of both players
 function pairCalc(a,b){let total=0,par=0,n=0,b9=0,h18=0;
-  for(let h=0;h<18;h++){const x=net(a,h),y=net(b,h);if(x==null||y==null)continue;total+=x+y;par+=2*C.par[h];n++;if(h>=9)b9+=x+y-2*C.par[h];if(h===17)h18=x+y-2*C.par[h]}
+  for(let h=0;h<18;h++){if(!isOpen(h))continue;const x=net(a,h),y=net(b,h);if(x==null||y==null)continue;total+=x+y;par+=2*C.par[h];n++;if(h>=9)b9+=x+y-2*C.par[h];if(h===17)h18=x+y-2*C.par[h]}
   return{total,par,n,diff:total-par,b9,h18}}
 function indCalc(p){let total=0,gross=0,par=0,n=0,b9=0,h18=0;
-  for(let h=0;h<18;h++){const g=gr(p,h);if(g==null)continue;gross+=g;total+=g-strokes(p,h);par+=C.par[h];n++;if(h>=9)b9+=g-strokes(p,h)-C.par[h];if(h===17)h18=g-strokes(p,h)-C.par[h]}
+  for(let h=0;h<18;h++){if(!isOpen(h))continue;const g=gr(p,h);if(g==null)continue;gross+=g;total+=g-strokes(p,h);par+=C.par[h];n++;if(h>=9)b9+=g-strokes(p,h)-C.par[h];if(h===17)h18=g-strokes(p,h)-C.par[h]}
   return{total,gross,par,n,diff:total-par,b9,h18}}
 function holeDone(h){return C.players.every(p=>sc(p.id)[h]!=null)}
 function holePart(h){return C.players.some(p=>sc(p.id)[h]!=null)}
@@ -217,7 +224,7 @@ function applyState(j){
   const first=!lastSig;lastSig=sig;C={...DEF(),...j.config};S=j.scores||{};
   queue.forEach(e=>{sc(e.pid)[e.hole]=e.value});
   try{localStorage.setItem('r60cache',sig)}catch(_){}
-  if(first){hole=0;while(hole<17&&holeDone(hole))hole++}
+  if(first){hole=0;while(hole<17&&(!isOpen(hole)||holeDone(hole)))hole++}
   render();
 }
 function qpush(e){queue=queue.filter(x=>!(x.pid===e.pid&&x.hole===e.hole));queue.push(e);clearTimeout(flushT);flushT=setTimeout(flush,300)}
@@ -241,7 +248,7 @@ function render(){
 }
 function teamSummary(){
   const T=C.teams.map(t=>({t,c:teamCalc(t.id)}));
-  const [a,b]=T;const d=a.c.diff-b.c.diff,fin=a.c.n===18&&b.c.n===18;
+  const [a,b]=T;const d=a.c.diff-b.c.diff,fin=a.c.n===OPEN().length&&b.c.n===OPEN().length;
   let lead=d<0?0:d>0?1:-1,how='';
   if(d===0&&fin){const t=a.c.b9-b.c.b9;if(t){lead=t<0?0:1;how='back 9 tiebreaker'}else{const u=a.c.h18-b.c.h18;if(u){lead=u<0?0:1;how='hole 18 tiebreaker'}}}
   let st='All square';
@@ -259,10 +266,11 @@ function banner(){
   return`<div class="bimg"><img src="banner.jpg" alt="${esc((C.honoree||'')+"'s Birthday Round")}"><div class="bctl"><span class="dot ${SYNC?'':'off'}" id="dot" title="sync"></span><button class="gear" data-act="setup" aria-label="Setup">&#9881;</button></div></div>`;
 }
 function matchView(){
-  const h=hole,par=C.par[h],si=C.si[h],all=h===8||h===17;
-  let strip='';for(let i=0;i<18;i++)strip+=`<button data-act="goto" data-h="${i}" class="${holeDone(i)?'done':holePart(i)?'part':''} ${i===h?'cur':''}">${i+1}</button>`;
+  if(!isOpen(hole)){hole=nextOpen(hole,1)??nextOpen(hole,-1)??0}
+  const h=hole,par=C.par[h],si=eSI(h),all=h===8||h===17;
+  let strip='';for(let i=0;i<18;i++)strip+=!isOpen(i)?`<button disabled class="closed">${i+1}</button>`:`<button data-act="goto" data-h="${i}" class="${holeDone(i)?'done':holePart(i)?'part':''} ${i===h?'cur':''}">${i+1}</button>`;
   let html=summaryCard();
-  html+=`<div class="card"><div class="holebar"><button class="nav" data-act="prev" ${h===0?'disabled style="opacity:.3"':''}>&#8249;</button><div class="info"><div class="hn">Hole ${h+1}</div><div class="hi">Par ${par}${C.yds&&C.yds[h]?' · '+C.yds[h]+' yds':''} · Index ${si}${all?' · <b style="color:var(--gold)">all 4 scores count</b>':' · best 2 count'}</div></div><button class="nav" data-act="next1" ${h===17?'disabled style="opacity:.3"':''}>&#8250;</button></div><div class="strip">${strip}</div></div>`;
+  html+=`<div class="card"><div class="holebar"><button class="nav" data-act="prev" ${nextOpen(h,-1)==null?'disabled style="opacity:.3"':''}>&#8249;</button><div class="info"><div class="hn">Hole ${h+1}</div><div class="hi">Par ${par}${C.yds&&C.yds[h]?' · '+C.yds[h]+' yds':''} · Index ${si}${all?' · <b style="color:var(--gold)">all 4 scores count</b>':' · best 2 count'}</div></div><button class="nav" data-act="next1" ${nextOpen(h,1)==null?'disabled style="opacity:.3"':''}>&#8250;</button></div><div class="strip">${strip}</div></div>`;
   for(const t of C.teams){
     const ps=C.players.filter(p=>p.team===t.id),tc=teamCalc(t.id),hv=tc.holes[h];
     html+=`<div class="card tc"><h3 class="${t.id}">${esc(t.name)}<span>${hv?`hole: ${hv.val} (${fmtP(hv.val-hv.par)})`:'hole not complete'}</span></h3>`;
@@ -272,7 +280,7 @@ function matchView(){
     }
     html+='</div>';
   }
-  html+=h<17?`<button class="bigbtn" data-act="nexthole">Next hole &rarr;</button>`:`<button class="bigbtn" data-act="finish">Finish &amp; see leaderboard</button>`;
+  html+=nextOpen(h,1)!=null?`<button class="bigbtn" data-act="nexthole">Next hole &rarr;</button>`:`<button class="bigbtn" data-act="finish">Finish &amp; see leaderboard</button>`;
   html+=`<p class="muted" style="text-align:center">Tap the number to set par. Blank scores count as par when you tap Next hole.</p>`;
   return html;
 }
@@ -297,9 +305,9 @@ function boardView(){
   html+='</div>';
   return html;
 }
-function isFinal(){return C.players.every(p=>sc(p.id).every(v=>v!=null))}
+function isFinal(){return C.players.every(p=>OPEN().every(h=>sc(p.id)[h]!=null))}
 function resultsView(){
-  const fin=isFinal(),left=C.players.reduce((m,p)=>Math.max(m,18-indCalc(p).n),0);
+  const fin=isFinal(),left=C.players.reduce((m,p)=>Math.max(m,OPEN().length-indCalc(p).n),0);
   const any=C.players.some(p=>indCalc(p).n);
   let html='';
   if(!any)return html+`<div class="card"><h2>Results</h2><p class="muted" style="margin:0">Results show up here as scores come in. Confetti fires when the last hole is in.</p></div>`;
@@ -339,14 +347,14 @@ function confetti(){
 function cardTable(tid){
   const ps=C.players.filter(p=>p.team===tid),tc=teamCalc(tid);
   let h='<div class="sc"><table><tr><th>Hole</th>';for(let i=0;i<18;i++)h+=`<th>${i+1}</th>`;h+='<th>Tot</th></tr><tr><th>Par</th>';
-  for(let i=0;i<18;i++)h+=`<th>${C.par[i]}</th>`;h+=`<th>${C.par.reduce((a,b)=>a+b,0)}</th></tr>`;
+  for(let i=0;i<18;i++)h+=`<th>${isOpen(i)?C.par[i]:'–'}</th>`;h+=`<th>${C.par.reduce((a,b,i)=>a+(isOpen(i)?b:0),0)}</th></tr>`;
   for(const p of ps){
     h+=`<tr><td>${esc(p.name)}</td>`;let tot=0,n=0;
-    for(let i=0;i<18;i++){const g=gr(p,i),s=strokes(p,i);if(g==null){h+='<td>·</td>';continue}tot+=g;n++;h+=`<td class="${g<C.par[i]?'u':g>C.par[i]?'o':''}">${g}${s?'<sup>'+(s>1?s:'')+'*</sup>':''}</td>`}
+    for(let i=0;i<18;i++){if(!isOpen(i)){h+='<td style="opacity:.35">✕</td>';continue}const g=gr(p,i),s=strokes(p,i);if(g==null){h+='<td>·</td>';continue}tot+=g;n++;h+=`<td class="${g<C.par[i]?'u':g>C.par[i]?'o':''}">${g}${s?'<sup>'+(s>1?s:'')+'*</sup>':''}</td>`}
     h+=`<td><b>${n?tot:'–'}</b></td></tr>`;
   }
   h+='<tr class="tm"><td>Team net</td>';
-  for(let i=0;i<18;i++){const v=tc.holes[i];h+=`<td>${v?v.val:'·'}</td>`}
+  for(let i=0;i<18;i++){const v=tc.holes[i];h+=`<td>${!isOpen(i)?'✕':v?v.val:'·'}</td>`}
   h+=`<td>${tc.n?tc.total:'–'}</td></tr></table></div><p class="muted">* = handicap stroke on that hole. Team net: best 2 net per hole, all 4 on 9 &amp; 18. Scores capped at net double bogey. Ties: back 9, then hole 18.</p>`;
   return h;
 }
@@ -369,6 +377,10 @@ function setupView(){
   <div class="muted" id="shotsLine"></div>
   <label>Holes (par · stroke index from scorecard)</label>
   ${Array.from({length:18},(_,i)=>`<div class="hs"><b class="muted">${i+1}</b><input id="pa${i}" type="number" inputmode="numeric" value="${pr[i]}"><input id="si${i}" type="number" inputmode="numeric" value="${si[i]}"></div>`).join('')}
+  <label>Closed holes (skipped, not scored)</label>
+  <div class="clg">${Array.from({length:18},(_,i)=>`<label><input type="checkbox" id="cl${i}" ${(C.closed||[]).includes(i)?'checked':''} onchange="updShots()">${i+1}</label>`).join('')}</div>
+  <div class="muted" id="closedHint" style="margin-top:6px"></div>
+  <button class="bigbtn sec" data-act="usepct" id="usepct" style="display:none;margin-top:6px"></button>
   <button class="bigbtn" data-act="save" style="margin-top:12px">Save</button>
   <button class="bigbtn sec" data-act="close" style="margin-top:8px">Cancel</button></div>
   <div class="card"><h2>Danger zone</h2>
@@ -376,13 +388,15 @@ function setupView(){
   <button class="bigbtn danger" data-act="clear">Clear all scores</button></div></main>`;
   return h;
 }
-function updShots(){const pct=+$('#s-pct').value||0;$('#shotsLine').textContent='Playing shots at '+pct+'%: '+C.players.map((p,i)=>$('#pn'+i).value+' '+Math.max(0,Math.round((+$('#ph'+i).value||0)*pct/100))).join(' · ')}
+function updShots(){
+  const closed=Array.from({length:18},(_,i)=>i).filter(i=>$('#cl'+i)&&$('#cl'+i).checked),open=18-closed.length,h=$('#closedHint'),b=$('#usepct');
+  if(h){if(closed.length){const sug=Math.floor(open/18*100);h.textContent=`${open} holes open. Stroke index is re-ranked automatically. Suggested handicap %: ${sug}.`;b.style.display='';b.textContent=`Set handicap % to ${sug}`;b.dataset.v=sug}else{h.textContent='';b.style.display='none'}}const pct=+$('#s-pct').value||0;$('#shotsLine').textContent='Playing shots at '+pct+'%: '+C.players.map((p,i)=>$('#pn'+i).value+' '+Math.max(0,Math.round((+$('#ph'+i).value||0)*pct/100))).join(' · ')}
 function openSetup(){view='setup';$('#app').style.display='none';$('#over').innerHTML=`<div style="position:relative;z-index:30">${setupView()}</div>`;updShots();scrollTo(0,0)}
 function closeSetup(){view=null;$('#over').innerHTML='';$('#app').style.display='';render()}
 async function saveSetup(){
   const g=id=>$('#'+id).value;
   const nc={title:g('s-title').trim()||'The 60th Round',course:g('s-course').trim(),sub:g('s-sub').trim(),
-    teams:[{id:'A',name:g('s-ta').trim()||'Team A'},{id:'B',name:g('s-tb').trim()||'Team B'}],honoree:g('s-hon').trim(),cap:$('#s-cap').checked,pct:Math.max(0,Math.min(150,Math.round(+g('s-pct')||0))),
+    teams:[{id:'A',name:g('s-ta').trim()||'Team A'},{id:'B',name:g('s-tb').trim()||'Team B'}],honoree:g('s-hon').trim(),closed:Array.from({length:18},(_,i)=>i).filter(i=>$('#cl'+i).checked),cap:$('#s-cap').checked,pct:Math.max(0,Math.min(150,Math.round(+g('s-pct')||0))),
     players:C.players.map((p,i)=>({id:p.id,name:g('pn'+i).trim()||p.name,team:g('pt'+i),hcp:Math.max(0,Math.round(+g('ph'+i)||0))})),
     par:Array.from({length:18},(_,i)=>+g('pa'+i)||4),si:Array.from({length:18},(_,i)=>+g('si'+i)||i+1),yds:C.yds,pairs:C.pairs};
   const sis=[...nc.si].sort((a,b)=>a-b).join();
@@ -395,7 +409,7 @@ async function saveSetup(){
 async function loadPreset(){
   if(!confirm('Replace names, teams, handicaps and course card with the preset?'))return;
   const pin=await ensure('admin');if(pin===null)return;
-  const nc={...DEF(),pct:C.pct==null?100:C.pct};
+  const nc={...DEF(),pct:C.pct==null?100:C.pct,closed:C.closed||[]};
   try{await api('config',{pin,config:nc});lastSig='';closeSetup();await load();toast('Roster loaded')}
   catch(e){if(e.status===401){PINS.admin='';localStorage.removeItem('r60admin');toast('Wrong PIN')}else toast('Could not save')}
 }
@@ -406,13 +420,13 @@ async function clearScores(){
 }
 function sampleScores(){
   const entries=[];
-  C.players.forEach(p=>{for(let h=0;h<13;h++){const r=Math.random();entries.push({pid:p.id,hole:h,value:Math.max(2,C.par[h]+(r<.12?-1:r<.5?0:r<.82?1:r<.95?2:3))})}});
+  C.players.forEach(p=>{for(let h=0;h<13;h++){if(!isOpen(h))continue;const r=Math.random();entries.push({pid:p.id,hole:h,value:Math.max(2,C.par[h]+(r<.12?-1:r<.5?0:r<.82?1:r<.95?2:3))})}});
   putScores(entries).then(()=>{closeSetup();toast('Sample scores loaded')});
 }
 async function drawPairs(){
-  const unfinished=C.players.some(p=>sc(p.id).some(v=>v==null));
+  const unfinished=!isFinal();
   if(C.pairs&&!confirm('Redraw the pairs?'))return;
-  if(unfinished&&!confirm('Not all 18 holes are scored yet. Draw anyway?'))return;
+  if(unfinished&&!confirm('Not all holes are scored yet. Draw anyway?'))return;
   const pin=await ensure('admin');if(pin===null)return;
   let pairs;
   try{pairs=(await api('draw',{pin})).pairs}catch(e){if(e.status===401){PINS.admin='';localStorage.removeItem('r60admin');toast('Wrong PIN')}else toast('Could not draw');return}
@@ -431,13 +445,14 @@ document.addEventListener('click',async ev=>{
   else if(a==='close')closeSetup();
   else if(a==='save')saveSetup();
   else if(a==='preset')loadPreset();
+  else if(a==='usepct'){$('#s-pct').value=el.dataset.v;updShots()}
   else if(a==='clear')clearScores();
   else if(a==='sample')sampleScores();
   else if(a==='draw')drawPairs();
   else if(a==='closeov'){$('#over').innerHTML=''}
   else if(a==='goto'){hole=+el.dataset.h;render()}
-  else if(a==='prev'){if(hole>0)hole--;render()}
-  else if(a==='next1'){if(hole<17)hole++;render()}
+  else if(a==='prev'){const n=nextOpen(hole,-1);if(n!=null)hole=n;render()}
+  else if(a==='next1'){const n=nextOpen(hole,1);if(n!=null)hole=n;render()}
   else if(a==='inc'||a==='dec'){
     const par=C.par[hole],cur=sc(p)[hole],base=cur==null?par:cur,v=Math.max(1,Math.min(20,base+(a==='inc'?1:-1)));
     if(a==='inc'&&cur!=null&&cur>=cap(pl(p),hole)){toast('Max is net double bogey');return}
@@ -447,7 +462,7 @@ document.addEventListener('click',async ev=>{
   else if(a==='nexthole'||a==='finish'){
     const ents=C.players.filter(q=>sc(q.id)[hole]==null).map(q=>({pid:q.id,hole,value:C.par[hole]}));
     if(ents.length&&!(await putScores(ents)))return;
-    if(a==='finish'){tab='board'}else hole++;
+    if(a==='finish'){tab='board'}else hole=nextOpen(hole,1)??hole;
     render();scrollTo(0,0);
   }
 });

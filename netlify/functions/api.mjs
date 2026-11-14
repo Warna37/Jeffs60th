@@ -9,6 +9,7 @@ const DEFAULT_CONFIG = {
   title: "Ponz's 60th Round",
   honoree: "Ponz",
   cap: true,
+  closed: [],
   sub: "",
   course: "Turtle Creek Club (Blue)",
   teams: [
@@ -75,8 +76,9 @@ function cleanConfig(c) {
     return v >= 1 && v <= 18 ? v : i + 1;
   });
   const pct = Math.max(0, Math.min(150, Math.round(Number(c.pct ?? 100))));
+  const closed = Array.isArray(c.closed) ? [...new Set(c.closed.map(Number).filter((i) => Number.isInteger(i) && i >= 0 && i < 18))].slice(0, 6) : [];
   const yds = Array.from({ length: 18 }, (_, i) => { const v = Math.round(Number(c.yds?.[i])); return v > 0 && v < 800 ? v : 0; });
-  return { honoree: str(c.honoree, 30), cap: c.cap !== false, title: str(c.title, 60), sub: str(c.sub, 80), course: str(c.course, 60), teams, pct, players, par, si, yds, pairs: null };
+  return { honoree: str(c.honoree, 30), cap: c.cap !== false, closed, title: str(c.title, 60), sub: str(c.sub, 80), course: str(c.course, 60), teams, pct, players, par, si, yds, pairs: null };
 }
 
 export default async (req) => {
