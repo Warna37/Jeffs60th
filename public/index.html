@@ -127,7 +127,7 @@ radial-gradient(circle at 8% 20%,#e8b84a 0 3px,transparent 4px),radial-gradient(
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const DEF=()=>({title:"Ponz's 60th Round",honoree:'Ponz',cap:true,sub:'',course:'Turtle Creek Club (Blue)',teams:[{id:'A',name:'Team A'},{id:'B',name:'Team B'}],
-  pct:100,players:[['Luke','A',8],['Kyle','A',0],['Jeff','A',10],['Dickie','A',31],['Will','B',14],['Gilman','B',14],['Chris Vincze','B',18],['Mac','B',4]].map((x,i)=>({id:'p'+(i+1),name:x[0],team:x[1],hcp:x[2]})),
+  pct:100,players:[['Luke','A',8],['Will','A',14],['Chris','A',14],['Mac','A',4],['Kyle','B',0],['Jeff','B',10],['Dickie','B',27],['Chris Vincze','B',14]].map((x,i)=>({id:'p'+(i+1),name:x[0],team:x[1],hcp:x[2]})),
   par:[5, 4, 3, 4, 4, 4, 5, 3, 4, 4, 4, 4, 5, 3, 4, 5, 3, 4],si:[11, 1, 17, 13, 5, 3, 9, 15, 7, 2, 12, 4, 6, 18, 14, 10, 16, 8],yds:[533, 399, 142, 355, 372, 385, 542, 178, 394, 421, 384, 416, 506, 147, 344, 493, 181, 391],pairs:null});
 
 let C=DEF(),S={},ST={pinRequired:false,adminRequired:false,drawRequired:false},demo=false,tab='match',hole=0,view=null,lastSig='',queue=[],flushing=false,flushT,PINS={score:'',admin:'',draw:''};
