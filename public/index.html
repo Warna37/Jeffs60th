@@ -150,14 +150,14 @@ function strokes(p,h){if(!isOpen(h))return 0;const x=shots(p),N=OPEN().length||1
 function cap(p,h){return C.cap===false?99:C.par[h]+2+strokes(p,h)}
 function gr(p,h){const g=sc(p.id)[h];return g==null?null:Math.min(g,cap(p,h))}
 function net(p,h){const g=gr(p,h);return g==null?null:g-strokes(p,h)}
-// Team: best 2 net per hole; all players count on holes 9 and 18
+// Team: best 2 net per hole
 function teamCalc(tid){
   const ps=C.players.filter(p=>p.team===tid);let total=0,par=0,n=0,b9=0,h18=0;const holes=[];
   for(let h=0;h<18;h++){
     if(!isOpen(h)){holes.push(null);continue}
     const ns=ps.map(p=>net(p,h));
     if(!ps.length||ns.some(x=>x==null)){holes.push(null);continue}
-    const all=h===8||h===17,s=[...ns].sort((a,b)=>a-b),k=all?s.length:Math.min(2,s.length);
+    const all=false,s=[...ns].sort((a,b)=>a-b),k=all?s.length:Math.min(2,s.length);
     const val=s.slice(0,k).reduce((a,b)=>a+b,0),pp=C.par[h]*k;
     holes.push({val,par:pp,all});total+=val;par+=pp;n++;if(h>=9)b9+=val-pp;if(h===17)h18=val-pp;
   }
@@ -267,7 +267,7 @@ function banner(){
 }
 function matchView(){
   if(!isOpen(hole)){hole=nextOpen(hole,1)??nextOpen(hole,-1)??0}
-  const h=hole,par=C.par[h],si=eSI(h),all=h===8||h===17;
+  const h=hole,par=C.par[h],si=eSI(h),all=false;
   let strip='';for(let i=0;i<18;i++)strip+=!isOpen(i)?`<button disabled class="closed">${i+1}</button>`:`<button data-act="goto" data-h="${i}" class="${holeDone(i)?'done':holePart(i)?'part':''} ${i===h?'cur':''}">${i+1}</button>`;
   let html=summaryCard();
   html+=`<div class="card"><div class="holebar"><button class="nav" data-act="prev" ${nextOpen(h,-1)==null?'disabled style="opacity:.3"':''}>&#8249;</button><div class="info"><div class="hn">Hole ${h+1}</div><div class="hi">Par ${par}${C.yds&&C.yds[h]?' · '+C.yds[h]+' yds':''} · Index ${si}${all?' · <b style="color:var(--gold)">all 4 scores count</b>':' · best 2 count'}</div></div><button class="nav" data-act="next1" ${nextOpen(h,1)==null?'disabled style="opacity:.3"':''}>&#8250;</button></div><div class="strip">${strip}</div></div>`;
@@ -355,7 +355,7 @@ function cardTable(tid){
   }
   h+='<tr class="tm"><td>Team net</td>';
   for(let i=0;i<18;i++){const v=tc.holes[i];h+=`<td>${!isOpen(i)?'✕':v?v.val:'·'}</td>`}
-  h+=`<td>${tc.n?tc.total:'–'}</td></tr></table></div><p class="muted">* = handicap stroke on that hole. Team net: best 2 net per hole, all 4 on 9 &amp; 18. Scores capped at net double bogey. Ties: back 9, then hole 18.</p>`;
+  h+=`<td>${tc.n?tc.total:'–'}</td></tr></table></div><p class="muted">* = handicap stroke on that hole. Team net: best 2 net per hole. Scores capped at net double bogey. Ties: back 9, then hole 18.</p>`;
   return h;
 }
 

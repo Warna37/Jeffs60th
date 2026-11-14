@@ -1,6 +1,6 @@
 # The 60th Round - live scoring
 
-Two 4-man teams, 18 holes, net stroke play (best 2 net per hole; all 4 count on 9 and 18),
+Two 4-man teams, 18 holes, net stroke play (best 2 net per hole),
 plus a 2-man blind draw scored on combined net.
 
 ## Deploy
